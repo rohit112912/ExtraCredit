@@ -2,76 +2,68 @@ package main
 
 import (
 	"fmt"
-	"log"
 	"sync"
 )
 
-// BankAccount struct with balance and mutex
-type BankAccount struct {
+// Bank struct representing a bank with balance
+type Bank struct {
 	balance int
 	mu      sync.Mutex
 }
 
+// Singleton instance and sync.Once to ensure one-time initialization
+var bankInstance *Bank
 var once sync.Once
-var logger *log.Logger
 
-// InitializeLogger ensures logger is initialized only once
-func InitializeLogger() {
-	logger = log.Default()
-	logger.Println("Logger initialized.")
+// InitializeBank initializes the singleton Bank instance
+func InitializeBank() *Bank {
+	once.Do(func() {
+		bankInstance = &Bank{balance: 0}
+	})
+	return bankInstance
 }
 
-// Deposit adds amount to the balance
-func (acc *BankAccount) Deposit(amount int, wg *sync.WaitGroup) {
-	defer wg.Done()
-	acc.mu.Lock()
-	defer acc.mu.Unlock()
-
-	acc.balance += amount
-	logger.Printf("Deposited %d, New Balance: %d\n", amount, acc.balance)
+// GetBankInstance retrieves the singleton Bank instance
+func GetBankInstance() *Bank {
+	return bankInstance
 }
 
-// Withdraw subtracts amount from the balance
-func (acc *BankAccount) Withdraw(amount int, wg *sync.WaitGroup) {
-	defer wg.Done()
-	acc.mu.Lock()
-	defer acc.mu.Unlock()
+// Deposit adds an amount to the bank's balance
+func (b *Bank) Deposit(amount int) {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	b.balance += amount
+}
 
-	if amount > acc.balance {
-		logger.Printf("Failed to withdraw %d, Insufficient Balance: %d\n", amount, acc.balance)
-		return
+// Withdraw subtracts an amount from the bank's balance
+func (b *Bank) Withdraw(amount int) error {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	if amount > b.balance {
+		return fmt.Errorf("insufficient funds")
 	}
-
-	acc.balance -= amount
-	logger.Printf("Withdrew %d, New Balance: %d\n", amount, acc.balance)
+	b.balance -= amount
+	return nil
 }
 
-// GetBalance safely retrieves the balance
-func (acc *BankAccount) GetBalance() int {
-	acc.mu.Lock()
-	defer acc.mu.Unlock()
-	return acc.balance
+// GetBalance returns the current balance of the bank
+func (b *Bank) GetBalance() int {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	return b.balance
 }
 
+// Main function (optional) to demonstrate usage
 func main() {
-	// Ensure logger is initialized once
-	once.Do(InitializeLogger)
+	bank := InitializeBank()
+	bank.Deposit(100)
+	fmt.Printf("Balance after deposit: %d\n", bank.GetBalance())
 
-	var wg sync.WaitGroup
-	account := &BankAccount{balance: 1000} // Initial balance
-
-	// Simulate concurrent deposits and withdrawals
-	wg.Add(5)
-	go account.Deposit(500, &wg)
-	go account.Withdraw(200, &wg)
-	go account.Withdraw(1500, &wg) // Should fail due to insufficient balance
-	go account.Deposit(100, &wg)
-	go account.Withdraw(300, &wg)
-
-	// Wait for all goroutines to complete
-	wg.Wait()
-
-	// Print final balance
-	fmt.Printf("Final Balance: %d\n", account.GetBalance())
+	err := bank.Withdraw(50)
+	if err != nil {
+		fmt.Println("Error:", err)
+	} else {
+		fmt.Printf("Balance after withdrawal: %d\n", bank.GetBalance())
+	}
 }
 

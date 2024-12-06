@@ -1,40 +1,56 @@
-// File: main_test.go
 package main
 
 import (
-	"sync"
 	"testing"
 )
 
-func TestBankOperations(t *testing.T) {
-	var once sync.Once
-	once.Do(InitializeBank)
-
-	b := GetBankInstance()
-
-	// Reset balance for test.
-	b.mu.Lock()
-	b.balance = 0
-	b.mu.Unlock()
-
-	wg := sync.WaitGroup{}
-	for i := 0; i < 10; i++ {
-		wg.Add(2)
-		go func(amount int) {
-			defer wg.Done()
-			b.Deposit(amount)
-		}(10)
-
-		go func(amount int) {
-			defer wg.Done()
-			b.Withdraw(amount)
-		}(5)
-	}
-	wg.Wait()
-
-	expectedBalance := 50
-	actualBalance := b.Balance()
-	if actualBalance != expectedBalance {
-		t.Errorf("Expected balance %d, got %d", expectedBalance, actualBalance)
+func TestInitializeBank(t *testing.T) {
+	bank := InitializeBank()
+	if bank == nil {
+		t.Error("Failed to initialize bank instance")
 	}
 }
+
+func TestGetBankInstance(t *testing.T) {
+	_ = InitializeBank() // Ensure the instance is initialized
+	bank := GetBankInstance()
+	if bank == nil {
+		t.Error("Failed to retrieve bank instance")
+	}
+}
+
+func TestDeposit(t *testing.T) {
+	bank := InitializeBank()
+	bank.Deposit(100)
+	if bank.GetBalance() != 100 {
+		t.Errorf("Expected balance 100, got %d", bank.GetBalance())
+	}
+}
+
+func TestWithdraw(t *testing.T) {
+	bank := InitializeBank()
+	bank.Deposit(100)
+
+	err := bank.Withdraw(50)
+	if err != nil {
+		t.Errorf("Withdraw failed with error: %v", err)
+	}
+
+	if bank.GetBalance() != 50 {
+		t.Errorf("Expected balance 50, got %d", bank.GetBalance())
+	}
+
+	err = bank.Withdraw(100)
+	if err == nil {
+		t.Error("Expected insufficient funds error, got nil")
+	}
+}
+
+func TestGetBalance(t *testing.T) {
+	bank := InitializeBank()
+	bank.Deposit(200)
+	if bank.GetBalance() != 200 {
+		t.Errorf("Expected balance 200, got %d", bank.GetBalance())
+	}
+}
+
