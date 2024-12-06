@@ -53,17 +53,3 @@ func (b *Bank) GetBalance() int {
 	return b.balance
 }
 
-// Main function (optional) to demonstrate usage
-func main() {
-	bank := InitializeBank()
-	bank.Deposit(100)
-	fmt.Printf("Balance after deposit: %d\n", bank.GetBalance())
-
-	err := bank.Withdraw(50)
-	if err != nil {
-		fmt.Println("Error:", err)
-	} else {
-		fmt.Printf("Balance after withdrawal: %d\n", bank.GetBalance())
-	}
-}
-

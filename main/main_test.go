@@ -4,7 +4,14 @@ import (
 	"testing"
 )
 
+// Helper function to reset the Bank singleton instance
+func resetBankInstance() {
+	bankInstance = nil
+	once = sync.Once{}
+}
+
 func TestInitializeBank(t *testing.T) {
+	resetBankInstance()
 	bank := InitializeBank()
 	if bank == nil {
 		t.Error("Failed to initialize bank instance")
@@ -12,6 +19,7 @@ func TestInitializeBank(t *testing.T) {
 }
 
 func TestGetBankInstance(t *testing.T) {
+	resetBankInstance()
 	_ = InitializeBank() // Ensure the instance is initialized
 	bank := GetBankInstance()
 	if bank == nil {
@@ -20,6 +28,7 @@ func TestGetBankInstance(t *testing.T) {
 }
 
 func TestDeposit(t *testing.T) {
+	resetBankInstance()
 	bank := InitializeBank()
 	bank.Deposit(100)
 	if bank.GetBalance() != 100 {
@@ -28,6 +37,7 @@ func TestDeposit(t *testing.T) {
 }
 
 func TestWithdraw(t *testing.T) {
+	resetBankInstance()
 	bank := InitializeBank()
 	bank.Deposit(100)
 
@@ -47,6 +57,7 @@ func TestWithdraw(t *testing.T) {
 }
 
 func TestGetBalance(t *testing.T) {
+	resetBankInstance()
 	bank := InitializeBank()
 	bank.Deposit(200)
 	if bank.GetBalance() != 200 {
