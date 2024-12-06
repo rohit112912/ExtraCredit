@@ -1,7 +1,8 @@
 package main
 
 import (
-	"testing"
+      	"testing"
+	"sync"
 )
 
 // Helper function to reset the Bank singleton instance
